@@ -8,7 +8,7 @@ import json
 from pydantic import BaseModel, EmailStr, Field
 
 # Imports from FastAPI
-from fastapi import Body, FastAPI, status
+from fastapi import Body, FastAPI, Path, status
 
 app = FastAPI()
 
@@ -140,18 +140,45 @@ def show_all_users():
             summary="Show a User",
             tags=["Users"]
         )
-def show_a_user():
-    pass
+def show_a_user(
+                user_id: UUID = Path(
+                    ...,
+                    title="User UUID",
+                    description="This is the User UUID",
+                    example="3fa85f64-5717-4562-b3fc-2c963f66afa8")
+                ):
+    with open("users.json", "r", encoding="utf-8") as f:
+        results = json.loads(f.read())
+    user = [user for user in results if user["user_id"] == str(user_id)]
+    return User(user_id=user[0]["user_id"], 
+                email=user[0]["email"], 
+                first_name=user[0]["first_name"], 
+                last_name=user[0]["last_name"], 
+                birth_date=user[0]["birth_date"])
 
 ### Delete a User
 @app.delete(
             path="/users/{user_id}/delete",
-            status_code=status.HTTP_204_NO_CONTENT,
+            status_code=status.HTTP_200_OK,
             summary="Delete a User",
             tags=["Users"]
         )
-def delete_a_user():
-    pass
+def delete_a_user(user_id: UUID = Path(
+                    ...,
+                    title="User UUID",
+                    description="This is the User UUID",
+                    example="3fa85f64-5717-4562-b3fc-2c963f66afa8")):
+    with open("users.json", "r", encoding="utf-8") as f:
+        results = json.loads(f.read())
+        results_with_user_deleted = [user for user in results if user["user_id"] != str(user_id) ]
+        user_to_delete = [user for user in results if user["user_id"] == str(user_id) ]
+    if len(user_to_delete) == 0:
+        return {"mensaje": f"The User with {user_id} not found"}
+    else:    
+        with open("users.json", "w", encoding="utf-8") as f:
+            f.seek(0)
+            f.write(json.dumps(results_with_user_deleted))
+        return {"mensaje": f"The User with {user_id} was deleted"}
 
 ### Update a User
 @app.put(
