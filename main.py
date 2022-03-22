@@ -188,9 +188,28 @@ def delete_a_user(user_id: UUID = Path(
             summary="Update a User",
             tags=["Users"]
         )
-def update_a_user():
-    pass
-
+def update_a_user(user_id: UUID = Path(
+                    ...,
+                    title="User UUID",
+                    description="This is the User UUID",
+                    example="3fa85f64-5717-4562-b3fc-2c963f66afa8"),
+                    user: User = Body(...)):
+    with open("users.json", "r", encoding="utf-8") as f:
+        results = json.loads(f.read())
+    user_new = user.dict()
+    user_founded = [user for user in results if user["user_id"] == str(user_id)][0]
+    index_user = results.index(user_founded)
+    results[index_user]["email"] = str(user_new["email"])
+    results[index_user]["fisrt_name"] = str(user_new["first_name"])
+    results[index_user]["last_name"] = str(user_new["last_name"])
+    results[index_user]["birth_date"] = str(user_new["birth_date"])
+    with open("users.json", "w", encoding="utf-8") as f:
+        f.write(json.dumps(results))
+    return User(user_id=str(user_id),
+                email=str(user_new["email"]),
+                first_name=str(user_new["first_name"]),
+                last_name=str(user_new["last_name"]),
+                birth_date=str(user_new["birth_date"]))
 ## Tweets
 
 ### Show all Tweets
